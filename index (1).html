@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>City Scrapers Champaign-Urbana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Domine:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #FF5F05;
+    --navy: #13294B;
+    --bg: #fafaf7;
+    --rule: #13294B;
+    --muted: #6b6660;
+    --text: #1a1a1a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Inter", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  a { color: var(--orange); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Masthead */
+  .masthead {
+    border-bottom: 1px solid #e7e2dc;
+    background: #fff;
+  }
+  .masthead-inner {
+    max-width: 84rem;
+    margin: 0 auto;
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+  .masthead-logo {
+    max-height: 3.5rem;
+    width: auto;
+    display: block;
+    flex-shrink: 0;
+  }
+  h1 {
+    font-family: "Inter", sans-serif;
+    font-size: clamp(1.25rem, 3vw, 2rem);
+    color: var(--text);
+    margin: 0;
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .masthead-link {
+    margin-left: auto;
+    font-size: 0.875rem;
+    color: var(--orange);
+    flex-shrink: 0;
+  }
+
+  /* Controls */
+  .controls {
+    max-width: 84rem;
+    margin: 0 auto;
+    padding: 1.5rem 2rem 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+  }
+  .search {
+    flex: 1;
+    min-width: 240px;
+    position: relative;
+  }
+  .search input {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid #d6d3d1;
+    border-radius: 3px;
+    font-size: 0.9375rem;
+    font-family: inherit;
+    background: #fff;
+    outline: none;
+  }
+  .search input:focus { border-color: #3174ad; box-shadow: 0 0 0 2px rgba(49,116,173,0.15); }
+  select {
+    padding: 0.625rem 0.875rem;
+    border: 1px solid #d6d3d1;
+    background: #fff;
+    font-family: inherit;
+    font-size: 0.875rem;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  select:focus { outline: none; border-color: #3174ad; }
+
+  /* Main */
+  main {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 2rem;
+    box-sizing: border-box;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 2rem;
+    align-items: start;
+    max-width: 84rem;
+    margin: 0 auto;
+  }
+  @media (max-width: 1100px) {
+    .layout { grid-template-columns: 1fr; }
+    .calendar-pane { order: -1; }
+  }
+  @media (max-width: 640px) {
+    .calendar-pane { display: none; }
+  }
+  .list-pane {
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 0.5rem 1rem;
+    min-width: 0;
+    background: whitesmoke;
+    box-shadow: 0 3px 2px rgba(40,40,40,0.1) inset, 0 0 0 1px rgba(40,40,40,0.1) inset;
+    border-radius: 3px;
+  }
+  .calendar-pane { position: sticky; top: 1rem; min-width: 0; }
+
+  /* Calendar */
+  .cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+  .cal-title {
+    font-family: "Inter", sans-serif;
+    font-size: 1.125rem;
+    color: var(--text);
+    font-weight: 600;
+  }
+  .cal-nav { display: flex; gap: 0.25rem; }
+  .cal-nav button {
+    font-family: "Inter", sans-serif;
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid #d6d3d1;
+    background: #fff;
+    color: var(--text);
+    cursor: pointer;
+    border-radius: 3px;
+  }
+  .cal-nav button:hover { background: #f5f3ef; }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: #ddd;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .cal-dow {
+    background: #fff;
+    padding: 0.5rem 0.375rem;
+    font-family: "Inter", sans-serif;
+    font-size: 0.75rem;
+    color: var(--text);
+    text-align: center;
+    font-weight: 500;
+    border-bottom: 1px solid #ddd;
+  }
+  .cal-cell {
+    background: #fff;
+    min-height: 5rem;
+    padding: 0.375rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    cursor: pointer;
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .cal-cell.other-month { background: #fafaf7; color: #b8b4ae; }
+  .cal-cell.today { background: #eef3f8; }
+  .cal-cell.selected { outline: 2px solid var(--orange); outline-offset: -2px; z-index: 1; }
+  .cal-cell:hover:not(.other-month) { background: #f5f3ef; }
+  .cal-date {
+    font-family: "Inter", sans-serif;
+    font-size: 0.8125rem;
+    color: var(--text);
+    font-weight: 400;
+    margin-bottom: 0.125rem;
+    text-align: right;
+  }
+  .cal-cell.today .cal-date { color: var(--navy); font-weight: 700; }
+  .cal-pill {
+    background: #3174ad;
+    color: #fff;
+    font-size: 0.6875rem;
+    padding: 0.0625rem 0.375rem;
+    border-radius: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+  }
+  .cal-more {
+    font-family: "Inter", sans-serif;
+    font-size: 0.6875rem;
+    color: var(--muted);
+    font-weight: 500;
+    padding-left: 0.25rem;
+  }
+  .selected-day-banner {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--orange);
+    padding: 0.5rem 0.75rem;
+    background: #fff7f0;
+    border-left: 3px solid var(--orange);
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .selected-day-banner button {
+    background: none;
+    border: none;
+    color: var(--navy);
+    cursor: pointer;
+    font: inherit;
+    text-transform: uppercase;
+    text-decoration: underline;
+  }
+  .count {
+    font-family: "Inter", sans-serif;
+    font-size: 0.75rem;
+    color: var(--muted);
+    padding: 0.5rem 0;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Date group */
+  .date-group { margin-bottom: 4rem; }
+  .date-group:last-child { margin-bottom: 1rem; }
+  .date-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e7e2dc;
+  }
+  .date-header .day {
+    font-family: "Inter", sans-serif;
+    font-size: 0.875rem;
+    color: var(--text);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .date-header .relative {
+    font-size: 0.75rem;
+    color: var(--orange);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Meeting card */
+  .meeting {
+    background: #fff;
+    border: 1px solid #e7e2dc;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(40,40,40,0.04);
+  }
+  .meeting-content {
+    padding: 1.25rem 1.5rem 1.5rem;
+  }
+  .meeting-content .agency {
+    font-family: "Inter", sans-serif;
+    font-size: 1.125rem;
+    color: var(--text);
+    font-weight: 700;
+    margin-bottom: 0.125rem;
+    line-height: 1.3;
+  }
+  .meeting-content h3 {
+    font-family: "Inter", sans-serif;
+    font-size: 0.9375rem;
+    color: var(--muted);
+    margin: 0 0 0.75rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  .meeting-content .date {
+    font-size: 0.875rem;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+  .meeting-content .location {
+    font-size: 0.875rem;
+    color: var(--muted);
+    margin-bottom: 0;
+  }
+  .meeting-content .location-tag {
+    display: inline-block;
+    background: #f5f3ef;
+    color: var(--muted);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.0625rem 0.375rem;
+    border-radius: 2px;
+    margin-right: 0.375rem;
+    font-weight: 500;
+  }
+  .meeting-content .description {
+    font-size: 0.875rem;
+    color: var(--muted);
+    margin: 0.75rem 0 0;
+    line-height: 1.5;
+  }
+  .meeting-actions {
+    display: flex;
+    border-top: 1px solid #e7e2dc;
+  }
+  .meeting-actions a {
+    flex: 1;
+    text-align: center;
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--orange);
+    font-weight: 500;
+    border-right: 1px solid #e7e2dc;
+  }
+  .meeting-actions a:last-child { border-right: none; }
+  .meeting-actions a:hover { background: #fff7f0; text-decoration: none; }
+
+  .empty, .loading, .error {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.875rem;
+    color: var(--muted);
+    padding: 3rem 0;
+    text-align: center;
+  }
+  .error { color: var(--orange); }
+
+  footer {
+    max-width: 84rem;
+    margin: 0 auto;
+    padding: 2rem;
+    border-top: 1px solid #e7e2dc;
+    font-size: 0.8125rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .footer-inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+  }
+  .footer-inner a { color: var(--orange); }
+  .footer-links { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <img class="masthead-logo" src="./logo.png" alt="City Scrapers Champaign-Urbana logo" />
+    <h1>Champaign-Urbana Public Meetings</h1>
+    <a class="masthead-link" href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQVr2Uum1ZfBvX92g8cOYD-4rEf6E46vaj5BuLVumnL9t2c4GjvR9hm57RWDqFvHBxyyrQPDtlJDSo1/pub?output=csv" target="_blank" rel="noreferrer">Download Source Data →</a>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="search">
+    <input id="search" type="text" placeholder="Search meetings, agencies, locations…" />
+  </div>
+  <select id="agency-select"><option value="all">All agencies</option></select>
+  <select id="status-select">
+    <option value="all">All meetings</option>
+    <option value="upcoming">Upcoming</option>
+    <option value="today">Today</option>
+    <option value="past">Past</option>
+  </select>
+</div>
+
+<main>
+  <div class="layout">
+    <div class="list-pane">
+      <div id="content"><div class="loading">Loading meetings…</div></div>
+    </div>
+    <div class="calendar-pane">
+      <div id="calendar"></div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      A community project by <a href="https://github.com/jakec04/city-scrapers-cu" target="_blank" rel="noreferrer">Jake Cox</a>. Built on the <a href="https://github.com/City-Bureau/city-scrapers-events" target="_blank" rel="noreferrer">City Scrapers</a> model from <a href="https://www.citybureau.org/" target="_blank" rel="noreferrer">City Bureau</a>.
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/jakec04/city-scrapers-cu" target="_blank" rel="noreferrer">View on GitHub</a>
+      <a href="/cdn-cgi/l/email-protection#4e1c0b1e020f0d0b11030b0e2b362f233e222b602d2123713d3b2c242b2d3a730d273a376b7c7e1d2d3c2f3e2b3c3d6b7c7e0d1b6b7c7e273d3d3b2b">Report an issue</a>
+    </div>
+  </div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQVr2Uum1ZfBvX92g8cOYD-4rEf6E46vaj5BuLVumnL9t2c4GjvR9hm57RWDqFvHBxyyrQPDtlJDSo1/pub?output=csv";
+
+let meetings = [];
+let state = { search: "", agency: "all", status: "all", selectedDay: null };
+let viewMonth = new Date(); // first-of-month anchor for calendar view
+viewMonth.setDate(1);
+viewMonth.setHours(0, 0, 0, 0);
+
+function parseCSV(text) {
+  const rows = []; let row = []; let field = ""; let inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"' && text[i+1] === '"') { field += '"'; i++; }
+      else if (c === '"') inQ = false;
+      else field += c;
+    } else {
+      if (c === '"') inQ = true;
+      else if (c === ",") { row.push(field); field = ""; }
+      else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
+      else if (c !== "\r") field += c;
+    }
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  if (!rows.length) return [];
+  const headers = rows[0].map(h => h.trim());
+  return rows.slice(1)
+    .filter(r => r.some(c => c && c.trim()))
+    .map(r => Object.fromEntries(headers.map((h, i) => [h, (r[i] || "").trim()])));
+}
+
+function parseDate(iso) {
+  const d = new Date(iso + "T12:00:00");
+  return isNaN(d) ? null : d;
+}
+
+function formatDateLong(d) {
+  return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+}
+
+function relativeLabel(d) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(d); target.setHours(0,0,0,0);
+  const diff = Math.round((target - today) / 86400000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  if (diff === -1) return "Yesterday";
+  if (diff > 1 && diff < 7) return "This week";
+  if (diff >= 7 && diff < 14) return "Next week";
+  if (diff < 0) return "Past";
+  return "Upcoming";
+}
+
+function escapeHtml(s) {
+  return (s || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+
+// Parse "7:00 PM" / "7:30 PM" / "9 AM" into {h, m}; returns null if unparseable
+function parseTime(t) {
+  if (!t) return null;
+  const m = t.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*([ap]m)?$/i);
+  if (!m) return null;
+  let h = parseInt(m[1], 10);
+  const min = m[2] ? parseInt(m[2], 10) : 0;
+  const ampm = (m[3] || "").toLowerCase();
+  if (ampm === "pm" && h < 12) h += 12;
+  if (ampm === "am" && h === 12) h = 0;
+  return { h, m: min };
+}
+
+// Format a Date as YYYYMMDDTHHMMSS for ICS local-time fields
+function icsLocal(d) {
+  const p = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}T${p(d.getHours())}${p(d.getMinutes())}00`;
+}
+
+// Format a Date as YYYYMMDDTHHMMSSZ for ICS UTC fields (DTSTAMP)
+function icsUTC(d) {
+  const p = n => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}${p(d.getUTCMonth()+1)}${p(d.getUTCDate())}T${p(d.getUTCHours())}${p(d.getUTCMinutes())}${p(d.getUTCSeconds())}Z`;
+}
+
+// Escape special chars for ICS text fields
+function icsEscape(s) {
+  return (s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+}
+
+function buildICS(m) {
+  const date = parseDate(m.date);
+  if (!date) return null;
+  const t = parseTime(m.time);
+  const start = new Date(date);
+  if (t) start.setHours(t.h, t.m, 0, 0);
+  else start.setHours(9, 0, 0, 0); // fallback if no time given
+  const end = new Date(start.getTime() + 90 * 60 * 1000); // assume 90 min
+
+  const uid = `${m.id || start.getTime()}@city-scrapers-cu`;
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//City Scrapers Champaign-Urbana//EN",
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    `UID:${uid}`,
+    `DTSTAMP:${icsUTC(new Date())}`,
+    `DTSTART;TZID=America/Chicago:${icsLocal(start)}`,
+    `DTEND;TZID=America/Chicago:${icsLocal(end)}`,
+    `SUMMARY:${icsEscape(m.title + " — " + m.agency)}`,
+    m.location ? `LOCATION:${icsEscape(m.location)}` : null,
+    m.description ? `DESCRIPTION:${icsEscape(m.description)}` : null,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].filter(Boolean);
+  return lines.join("\r\n");
+}
+
+function downloadICS(m) {
+  const ics = buildICS(m);
+  if (!ics) return;
+  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const safeTitle = (m.title || "meeting").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+  a.href = url;
+  a.download = `${safeTitle}-${m.date}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 100);
+}
+
+function dayKey(d) {
+  const p = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+
+function render() {
+  const content = document.getElementById("content");
+  const q = state.search.toLowerCase();
+  const filtered = meetings
+    .filter(m => {
+      const match = (m.title||"").toLowerCase().includes(q) || (m.agency||"").toLowerCase().includes(q) || (m.location||"").toLowerCase().includes(q);
+      const a = state.agency === "all" || m.agency === state.agency;
+      const s = state.status === "all" || m.status === state.status;
+      const d = state.selectedDay === null || m.date === state.selectedDay;
+      return match && a && s && d;
+    })
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  let banner = "";
+  if (state.selectedDay) {
+    const d = parseDate(state.selectedDay);
+    banner = `<div class="selected-day-banner"><span>Showing ${escapeHtml(formatDateLong(d))}</span><button id="clear-day">Clear</button></div>`;
+  }
+
+  if (!filtered.length) {
+    content.innerHTML = banner + '<div class="empty">No meetings found.</div>';
+    wireBanner();
+    return;
+  }
+
+  // Group by date
+  const groups = {};
+  for (const m of filtered) {
+    const key = m.date;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(m);
+  }
+
+  let html = banner + `<div class="count">${filtered.length} ${filtered.length === 1 ? "meeting" : "meetings"}</div>`;
+
+  for (const dateKey of Object.keys(groups).sort()) {
+    const d = parseDate(dateKey);
+    if (!d) continue;
+    html += `<section class="date-group">
+      <div class="date-header">
+        <span class="day">${escapeHtml(formatDateLong(d))}</span>
+        <span class="relative">${relativeLabel(d)}</span>
+      </div>`;
+    for (const m of groups[dateKey]) {
+      html += `<article class="meeting">
+        <div class="meeting-content">
+          <div class="agency">${escapeHtml(m.agency)}</div>
+          <h3>${escapeHtml(m.title)}</h3>
+          <p class="date">${escapeHtml(formatDateLong(parseDate(m.date)))}${m.time ? "<br>" + escapeHtml(m.time) : ""}</p>
+          ${m.location ? `<p class="location"><span class="location-tag">Location</span>${escapeHtml(m.location)}</p>` : ""}
+          ${m.description ? `<p class="description">${escapeHtml(m.description)}</p>` : ""}
+        </div>
+        <div class="meeting-actions">
+          ${m.agenda ? `<a href="${escapeHtml(m.agenda)}" target="_blank" rel="noreferrer">View Agenda</a>` : ""}
+          ${m.minutes ? `<a href="${escapeHtml(m.minutes)}" target="_blank" rel="noreferrer">View Minutes</a>` : ""}
+          <a href="#" class="ics-link" data-meeting-id="${escapeHtml(m.id)}">Add to Calendar</a>
+        </div>
+      </article>`;
+    }
+    html += `</section>`;
+  }
+
+  content.innerHTML = html;
+
+  // Attach ICS download handlers
+  document.querySelectorAll(".ics-link").forEach(link => {
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      const id = link.dataset.meetingId;
+      const m = meetings.find(x => x.id === id);
+      if (m) downloadICS(m);
+    });
+  });
+
+  wireBanner();
+  renderCalendar();
+}
+
+function wireBanner() {
+  const btn = document.getElementById("clear-day");
+  if (btn) btn.addEventListener("click", () => { state.selectedDay = null; render(); });
+}
+
+function renderCalendar() {
+  const cal = document.getElementById("calendar");
+  if (!cal) return;
+
+  const year = viewMonth.getFullYear();
+  const month = viewMonth.getMonth();
+  const monthName = viewMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
+  // Build a map of dayKey -> meetings (respects current search/agency/status but not selectedDay)
+  const q = state.search.toLowerCase();
+  const visible = meetings.filter(m => {
+    const match = (m.title||"").toLowerCase().includes(q) || (m.agency||"").toLowerCase().includes(q) || (m.location||"").toLowerCase().includes(q);
+    const a = state.agency === "all" || m.agency === state.agency;
+    const s = state.status === "all" || m.status === state.status;
+    return match && a && s;
+  });
+  const byDay = {};
+  for (const m of visible) {
+    if (!byDay[m.date]) byDay[m.date] = [];
+    byDay[m.date].push(m);
+  }
+
+  // First day of grid = Sunday on or before the 1st
+  const first = new Date(year, month, 1);
+  const gridStart = new Date(first);
+  gridStart.setDate(1 - first.getDay());
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayKey = dayKey(today);
+
+  let html = `
+    <div class="cal-header">
+      <div class="cal-title">${escapeHtml(monthName)}</div>
+      <div class="cal-nav">
+        <button data-cal="today">Today</button>
+        <button data-cal="prev">Back</button>
+        <button data-cal="next">Next</button>
+      </div>
+    </div>
+    <div class="cal-grid">`;
+
+  for (const dow of ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]) {
+    html += `<div class="cal-dow">${dow}</div>`;
+  }
+
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(gridStart);
+    d.setDate(gridStart.getDate() + i);
+    const k = dayKey(d);
+    const inMonth = d.getMonth() === month;
+    const isToday = k === todayKey;
+    const isSelected = k === state.selectedDay;
+    const dayMeetings = byDay[k] || [];
+
+    const classes = ["cal-cell"];
+    if (!inMonth) classes.push("other-month");
+    if (isToday) classes.push("today");
+    if (isSelected) classes.push("selected");
+
+    html += `<div class="${classes.join(" ")}" data-day="${k}">
+      <div class="cal-date">${d.getDate()}</div>`;
+    const maxPills = 2;
+    for (const m of dayMeetings.slice(0, maxPills)) {
+      html += `<div class="cal-pill" title="${escapeHtml(m.agency + " — " + m.title)}">${escapeHtml(m.title)}</div>`;
+    }
+    if (dayMeetings.length > maxPills) {
+      html += `<div class="cal-more">+${dayMeetings.length - maxPills} more</div>`;
+    }
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  cal.innerHTML = html;
+
+  cal.querySelectorAll(".cal-cell").forEach(cell => {
+    cell.addEventListener("click", () => {
+      const k = cell.dataset.day;
+      state.selectedDay = (state.selectedDay === k) ? null : k;
+      render();
+    });
+  });
+  cal.querySelectorAll(".cal-nav button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const action = btn.dataset.cal;
+      if (action === "today") { viewMonth = new Date(); viewMonth.setDate(1); viewMonth.setHours(0,0,0,0); }
+      else if (action === "prev") { viewMonth.setMonth(viewMonth.getMonth() - 1); }
+      else if (action === "next") { viewMonth.setMonth(viewMonth.getMonth() + 1); }
+      renderCalendar();
+    });
+  });
+}
+
+function populateAgencies() {
+  const select = document.getElementById("agency-select");
+  const unique = [...new Set(meetings.map(m => m.agency).filter(Boolean))].sort();
+  select.innerHTML = '<option value="all">All agencies</option>' + unique.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join("");
+}
+
+document.getElementById("search").addEventListener("input", e => { state.search = e.target.value; render(); });
+document.getElementById("agency-select").addEventListener("change", e => { state.agency = e.target.value; render(); });
+document.getElementById("status-select").addEventListener("change", e => { state.status = e.target.value; render(); });
+
+fetch(SHEET_CSV_URL)
+  .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
+  .then(text => {
+    meetings = parseCSV(text);
+    // Derive status from date so the sheet doesn't need a status column
+    const _today = new Date(); _today.setHours(0,0,0,0);
+    const _todayKey = dayKey(_today);
+    for (const _m of meetings) {
+      if (_m.date === _todayKey) _m.status = "today";
+      else if (_m.date < _todayKey) _m.status = "past";
+      else _m.status = "upcoming";
+    }
+    populateAgencies();
+    render();
+  })
+  .catch(err => {
+    document.getElementById("content").innerHTML = `<div class="error">Could not load sheet: ${escapeHtml(err.message)}</div>`;
+  });
+</script>
+</body>
+</html>
